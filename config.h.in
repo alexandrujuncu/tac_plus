@@ -69,6 +69,9 @@
 /* Define if you have POSIX threads libraries and header files. */
 #undef HAVE_PTHREAD
 
+/* Define to 1 if you have the `random' function. */
+#undef HAVE_RANDOM
+
 /* Define to 1 if you have the <shadow.h> header file. */
 #undef HAVE_SHADOW_H
 

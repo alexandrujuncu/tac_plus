@@ -760,7 +760,8 @@ authorize_svc(char *user, int svc, char *protocol, char *svcname,
     for (i = 0; i < data->num_in_args; i++) {
 	if (!arg_ok(data->input_args[i])) {
 	    char buf[MAX_INPUT_LINE_LEN+50];
-	    sprintf(buf, "Illegal arg %s from NAS", data->input_args[i]);
+	    snprintf(buf, sizeof(buf), "Illegal arg %s from NAS",
+		     data->input_args[i]);
 	    data->status = AUTHOR_STATUS_ERROR;
 	    data->admin_msg = tac_strdup(buf);
 	    report(LOG_ERR, "%s: Error %s", session.peer, buf);

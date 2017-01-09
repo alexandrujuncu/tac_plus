@@ -438,3 +438,11 @@ F4.0.4.24
 	  check return - Robert Swiecki
 	- make snprintf buffers of get_authen_continue() and send_authen_error()
 	  at least NI_MAXHOST bytes - Robert Swiecki
+
+F4.0.4.25
+	- add -m (md5) option to tac_pwd.  XXX could use better salt generation
+	- use random() in tac_pwd if available and generate 4 bytes of salt for
+	  md5.
+	- sprintf -> snprintf - Robert Swiecki
+	- more pkt size checking in acct.c, authen.c, author.c - Robert Swiecki
+	- free(pak) in start_session() not in account(), for consistency

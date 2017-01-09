@@ -170,8 +170,9 @@ choose_login(struct authen_data *data, struct authen_type *type)
 	    return(CHOOSE_OK);
 	}
 
-	/* Version 1 login/[pap|chap|arap].
-	 * The username must in the initial START packet
+	/*
+	 * Version 1 login/[pap|chap|arap].
+	 * The username must be in the initial START packet
 	 */
 	if (!name[0]) {
 	    report(LOG_ERR, "%s %s: No user in START packet for PAP/CHAP/ARAP",

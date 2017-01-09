@@ -114,6 +114,9 @@ init(void)
 static RETSIGTYPE
 handler(int signum)
 {
+    /* report() is not reentrant-safe */
+#define RCVSIG_STR "Received signal\n"
+    write(fileno(stderr), RCVSIG_STR, strlen(RCVSIG_STR));
     reinitialize = 1;
 #ifdef REARMSIGNAL
     signal(SIGUSR1, handler);
@@ -675,7 +678,6 @@ bad_version_check(u_char *pak)
 /*
  * Determine the packet type, read the rest of the packet data,
  * decrypt it and call the appropriate service routine.
- *
  */
 void
 start_session(void)
@@ -719,6 +721,7 @@ start_session(void)
 
 	case TAC_PLUS_ACCT:
 	    accounting(pak);
+	    free(pak);
 	    break;
 
 	default:

@@ -46,7 +46,6 @@ get_authen_continue(void)
     u_char *pak;
     struct authen_cont *cont;
     char msg[NI_MAXHOST + 256];
-    int ret;
 
     pak = read_packet();
     if (!pak)
@@ -55,12 +54,9 @@ get_authen_continue(void)
     cont = (struct authen_cont *)(pak + TAC_PLUS_HDR_SIZE);
 
     if ((hdr->type != TAC_PLUS_AUTHEN) || (hdr->seq_no <= 1)) {
-	ret = snprintf(msg, sizeof(msg), "%s: Bad packet type=%d/seq no=%d "
-		       "when expecting authentication cont", session.peer,
-		       hdr->type, hdr->seq_no);
-	if (ret >= sizeof(msg))
-	    msg[sizeof(msg) - 1] = '\0';
-	else if (ret == -1)
+	if (snprintf(msg, sizeof(msg), "%s: Bad packet type=%d/seq no=%d "
+		     "when expecting authentication cont", session.peer,
+		     hdr->type, hdr->seq_no) == -1)
 	    strcpy(msg, "");
 	report(LOG_ERR, msg);
 	send_authen_error(msg);
@@ -235,13 +231,9 @@ void
 send_authen_error(char *msg)
 {
     char buf[NI_MAXHOST + 256];
-    int ret;
 
-    ret = snprintf(buf, sizeof(buf), "%s %s: %s", session.peer, session.port,
-		   msg);
-    if (ret >= sizeof(buf))
-	buf[sizeof(buf) - 1] = '\0';
-    else if (ret == -1)
+    if (snprintf(buf, sizeof(buf), "%s %s: %s", session.peer, session.port,
+		 msg) == -1)
 	strcpy(buf, "");
     report(LOG_ERR, buf);
     send_authen_reply(TAC_PLUS_AUTHEN_STATUS_ERROR, buf, strlen(buf), NULL, 0,
@@ -392,22 +384,21 @@ send_error_reply(int type, char *msg)
     switch (type) {
     case TAC_PLUS_AUTHEN:
 	send_authen_error(msg);
-	return;
+	break;
 
     case TAC_PLUS_AUTHOR:
 	send_author_reply(AUTHOR_STATUS_ERROR, msg, NULL, 0, NULL);
-	return;
+	break;
 
     case TAC_PLUS_ACCT:
 	send_acct_reply(TAC_PLUS_ACCT_STATUS_ERROR, msg, NULL);
-	return;
+	break;
 
     default:
 	report(LOG_ERR, "Illegal type %d for send_error_reply", type);
-	return;
+	break;
     }
 
-    /*NOTREACHED*/
     return;
 }
 

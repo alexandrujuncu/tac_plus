@@ -92,9 +92,8 @@ maxsess_check_count(char *user, struct author_data *data)
     if (sess >= maxsess) {
 	char buf[80];
 
-	sprintf(buf,
-		"Login failed; too many active sessions (%d maximum)",
-		maxsess);
+	snprintf(buf, sizeof(buf),
+		"Login failed; too many active sessions (%d maximum)", maxsess);
 
 	data->msg = tac_strdup(buf);
 

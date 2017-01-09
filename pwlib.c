@@ -78,7 +78,7 @@ set_expiration_status(char *exp_date, struct authen_data *data)
 		   exp_date ? exp_date : "<no expiry date set>");
 
 	data->status = TAC_PLUS_AUTHEN_STATUS_PASS;
-	return;
+	break;
 
     case PW_EXPIRING:
 	if (debug & DEBUG_PASSWD_FLAG)
@@ -88,7 +88,7 @@ set_expiration_status(char *exp_date, struct authen_data *data)
 	    free(data->server_msg);
 	data->server_msg = tac_strdup("Password will expire soon");
 	data->status = TAC_PLUS_AUTHEN_STATUS_PASS;
-	return;
+	break;
 
     case PW_EXPIRED:
 	if (debug & DEBUG_PASSWD_FLAG)
@@ -98,16 +98,15 @@ set_expiration_status(char *exp_date, struct authen_data *data)
 	    free(data->server_msg);
 	data->server_msg = tac_strdup("Password has expired");
 	data->status = TAC_PLUS_AUTHEN_STATUS_FAIL;
-	return;
+	break;
 
     default:
 	report(LOG_ERR, "%s: Bogus return value %d from check_expiration",
 	       session.peer, expired);
 	data->status = TAC_PLUS_AUTHEN_STATUS_ERROR;
-	return;
+	break;
     }
 
-    /*NOTREACHED*/
     return;
 }
 
