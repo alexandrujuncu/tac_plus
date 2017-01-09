@@ -1,6 +1,6 @@
 .\"
 .hys 50
-.TH tac_plus.conf 5 "8 June 2011"
+.TH tac_plus.conf 5 "21 March 2012"
 .\"
 .SH NAME
 .\"
@@ -211,6 +211,14 @@ the AV pair is optional.
 .nf
     [ optional ] <string> = <string>
 .fi
+.sp
+Optional AV pairs are only sent to the client if it requests them.  That is,
+the client must have included the given AV pair as a mandatory or optional
+pair in the request.
+.sp
+Some clients react incorrectly and negatively to receiving AV pairs that it
+did not solicit.  Optional AV pairs should be ignored if they are not
+recognized or not supported in any given context.
 .sp
 Also see the "Configuring Authorization" and "AV Pairs" sections below.
 .\"
@@ -457,6 +465,8 @@ news, syslog, user, and uucp.
         enable = <password_spec>
         pap  = cleartext "inbound pap password"
         opap = cleartext "outbound pap password"
+        pap  = des <des_string>
+        pap  = PAM
         login = <password_spec>
         global = cleartext "outbound pap password"
     }
@@ -508,6 +518,9 @@ chap
 	#endif
                          pap      = cleartext <string> |
                          pap      = des <string> |
+	#ifdef PAM
+                         pap      = PAM |
+	#endif
                          opap     = cleartext <string> |
                          global   = cleartext <string> |
                          msg      = <string>

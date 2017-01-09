@@ -38,7 +38,7 @@ int deny_severity = 0;
 char *progname;			/* program name */
 static int standalone = 1;	/* running standalone (1) or under inetd (0) */
 static int initialised;		/* data structures have been allocated */
-static int reinitialize;	/* schedule config reinitialization */
+volatile sig_atomic_t reinitialize;	/* schedule config reinitialization */
 int sendauth_only;		/* don't respond to sendpass requests */
 int debug;			/* debugging flags */
 int facility = LOG_DAEMON;	/* syslog facility */
@@ -114,7 +114,6 @@ init(void)
 static RETSIGTYPE
 handler(int signum)
 {
-    report(LOG_NOTICE, "Received signal %d", signum);
     reinitialize = 1;
 #ifdef REARMSIGNAL
     signal(SIGUSR1, handler);

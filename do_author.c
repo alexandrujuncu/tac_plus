@@ -725,7 +725,6 @@ authorize_svc(char *user, int svc, char *protocol, char *svcname,
 	 * we'll allow it. */
 
 	if (cfg_user_svc_default_is_permit(user)) {
-
 	    if (debug & DEBUG_AUTHOR_FLAG)
 		report(LOG_DEBUG, "svc=%s protocol=%s svcname=%s not found, "
 		       "permitted by default", cfg_nodestring(svc),
@@ -780,7 +779,7 @@ authorize_svc(char *user, int svc, char *protocol, char *svcname,
 
     /* Allocate space for in + out args */
     max_args = cfg_cnt + data->num_in_args;
-    out_args = (char **) tac_malloc((max_args + 1) * sizeof(char *));
+    out_args = (char **)tac_malloc((max_args + 1) * sizeof(char *));
     outp = out_args;
     data->num_out_args = 0;
 
@@ -882,7 +881,6 @@ authorize_svc(char *user, int svc, char *protocol, char *svcname,
 	    *outp++ = tac_strdup(nas_arg);
 	    data->num_out_args++;
 	    goto next_nas_arg;
-
 	} else {
 	    /*
 	     * NAS AV pair is Optional
@@ -998,7 +996,6 @@ authorize_svc(char *user, int svc, char *protocol, char *svcname,
 	    goto next_nas_arg;
 	}
     next_nas_arg:;
-
     }
 
     /*

@@ -21,6 +21,7 @@
 
 #include "tac_plus.h"
 #include <poll.h>
+#include <netdb.h>
 #include <signal.h>
 #include <time.h>
 
@@ -44,7 +45,8 @@ get_authen_continue(void)
     HDR *hdr;
     u_char *pak;
     struct authen_cont *cont;
-    char msg[255];
+    char msg[NI_MAXHOST + 256];
+    int ret;
 
     pak = read_packet();
     if (!pak)
@@ -53,9 +55,13 @@ get_authen_continue(void)
     cont = (struct authen_cont *)(pak + TAC_PLUS_HDR_SIZE);
 
     if ((hdr->type != TAC_PLUS_AUTHEN) || (hdr->seq_no <= 1)) {
-	sprintf(msg,
-	  "%s: Bad packet type=%d/seq no=%d when expecting authentication cont",
-		session.peer, hdr->type, hdr->seq_no);
+	ret = snprintf(msg, sizeof(msg), "%s: Bad packet type=%d/seq no=%d "
+		       "when expecting authentication cont", session.peer,
+		       hdr->type, hdr->seq_no);
+	if (ret >= sizeof(msg))
+	    msg[sizeof(msg) - 1] = '\0';
+	else if (ret == -1)
+	    strcpy(msg, "");
 	report(LOG_ERR, msg);
 	send_authen_error(msg);
 	return(NULL);
@@ -114,7 +120,7 @@ read_packet(void)
     if ((ntohl(hdr.datalength) & ~0xffffUL) ||
 	(len < TAC_PLUS_HDR_SIZE) || (len > 0x10000)) {
 	report(LOG_ERR, "%s: Illegal data size: %lu\n", session.peer,
-	       ntohl(hdr.datalength));
+	       (unsigned long)ntohl(hdr.datalength));
 	return(NULL);
     }
     pkt = (u_char *)tac_malloc(len);
@@ -228,9 +234,15 @@ send_acct_reply(u_char status, char *msg, char *data)
 void
 send_authen_error(char *msg)
 {
-    char buf[255];
+    char buf[NI_MAXHOST + 256];
+    int ret;
 
-    sprintf(buf, "%s %s: %s", session.peer, session.port, msg);
+    ret = snprintf(buf, sizeof(buf), "%s %s: %s", session.peer, session.port,
+		   msg);
+    if (ret >= sizeof(buf))
+	buf[sizeof(buf) - 1] = '\0';
+    else if (ret == -1)
+	strcpy(buf, "");
     report(LOG_ERR, buf);
     send_authen_reply(TAC_PLUS_AUTHEN_STATUS_ERROR, buf, strlen(buf), NULL, 0,
 		      0);

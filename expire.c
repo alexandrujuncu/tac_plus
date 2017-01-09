@@ -50,7 +50,7 @@ static int32_t days_ere_month[] = {0, 31, 59, 90, 120, 151,
 				181, 212, 243, 273, 304, 334};
 
 /*
- * compare the *date in a "monday day year" format to the current day.  if
+ * compare the *date in a "month day year" format to the current day.  if
  * greater, return PW_EXPIRED, else PW_OK.
  */
 int

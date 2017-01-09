@@ -32,7 +32,11 @@
 
 #if HAVE_PAM
 # ifdef __APPLE__	/* MacOS X */
-#  include <pam/pam_appl.h>
+#  if __ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__ >= 1060
+#   include <security/pam_appl.h>
+#  else
+#   include <pam/pam_appl.h>
+#  endif
 # else
 #  include <security/pam_appl.h>
 # endif
@@ -464,12 +468,14 @@ des_verify(char *users_passwd, char *encrypted_passwd)
 }
 
 #if HAVE_PAM
+/* pam_conv (PAM conversation) callback */
 static int
 pam_tacacs(int nmsg, const struct pam_message **pmpp, struct pam_response
 	   **prpp, void *appdata_ptr)
 {
     int i;
     struct authen_cont *acp;
+    char *passwd = (char *)appdata_ptr;
     u_char *reply, *rp;
 
     if (debug & DEBUG_PASSWD_FLAG)
@@ -490,29 +496,35 @@ pam_tacacs(int nmsg, const struct pam_message **pmpp, struct pam_response
 		report(LOG_DEBUG, "%s %s: PAM_PROMPT_ECHO_OFF", session.peer,
 		       session.port);
 
-	    send_authen_reply(TAC_PLUS_AUTHEN_STATUS_GETPASS,
-			      (char *)pmpp[i]->msg,
-			      pmpp[i]->msg ? strlen(pmpp[i]->msg) : 0,
-			      NULL, 0, TAC_PLUS_AUTHEN_FLAG_NOECHO);
-	    reply = get_authen_continue();
-	    if (!reply) {
-		/* Typically due to a premature connection close */
-		report(LOG_ERR, "%s %s: Null reply packet, expecting CONTINUE",
-		       session.peer, session.port);
- 		goto fail;
+	    /* pre-supplied password, such as service=PAP, or prompt for it */
+	    if (passwd != NULL && strlen(passwd) > 0) {
+		prpp[i]->resp = tac_strdup(passwd);
+	    } else {
+		send_authen_reply(TAC_PLUS_AUTHEN_STATUS_GETPASS,
+				  (char *)pmpp[i]->msg,
+				  pmpp[i]->msg ? strlen(pmpp[i]->msg) : 0,
+				  NULL, 0, TAC_PLUS_AUTHEN_FLAG_NOECHO);
+		reply = get_authen_continue();
+		if (!reply) {
+		    /* Typically due to a premature connection close */
+		    report(LOG_ERR, "%s %s: Null reply packet, expecting "
+			   "CONTINUE", session.peer, session.port);
+ 		    goto fail;
+		}
+		acp = (struct authen_cont *)(reply + TAC_PLUS_HDR_SIZE);
+
+		rp = reply + TAC_PLUS_HDR_SIZE +
+		     TAC_AUTHEN_CONT_FIXED_FIELDS_SIZE;
+		/*
+		 * A response to our GETDATA/GETPASS request. Create a
+		 * null-terminated string for authen_data.
+		 */
+		prpp[i]->resp = (char *)tac_malloc(acp->user_msg_len + 1);
+		memcpy(prpp[i]->resp, rp, acp->user_msg_len);
+		prpp[i]->resp[acp->user_msg_len] = '\0';
+
+		free(reply);
 	    }
-	    acp = (struct authen_cont *)(reply + TAC_PLUS_HDR_SIZE);
-
-	    rp = reply + TAC_PLUS_HDR_SIZE + TAC_AUTHEN_CONT_FIXED_FIELDS_SIZE;
-	    /*
-	     * A response to our GETDATA/GETPASS request. Create a
-	     * null-terminated string for authen_data.
-	     */
-	    prpp[i]->resp = (char *)tac_malloc(acp->user_msg_len + 1);
-	    memcpy(prpp[i]->resp, rp, acp->user_msg_len);
-	    prpp[i]->resp[acp->user_msg_len] = '\0';
-
-	    free(reply);
 	    break;
 	case PAM_PROMPT_ECHO_ON:
 	    if (debug & DEBUG_PASSWD_FLAG)
@@ -586,7 +598,7 @@ pam_verify(char *user, char *passwd)
 {
     int			err;
     int			pam_flag;
-    struct pam_conv	conv = { pam_tacacs, NULL };
+    struct pam_conv	conv = { pam_tacacs, passwd };
     pam_handle_t	*pamh = NULL;
 
     if (debug & DEBUG_PASSWD_FLAG)

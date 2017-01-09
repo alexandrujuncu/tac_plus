@@ -86,6 +86,9 @@
 #endif
 				pap	= cleartext <string> |
 				pap	= des <string> |
+#ifdef HAVE_PAM
+				pap	= PAM |
+#endif
 				opap	= cleartext <string> |
 				global	= cleartext <string> |
 				msg	= <string>
@@ -1134,6 +1137,12 @@ parse_user(void)
 	    parse(S_separator);
 	    switch(sym_code) {
 
+#ifdef HAVE_PAM
+	    case S_pam:
+		user->pap = tac_strdup(sym_buf);
+		break;
+#endif
+
 	    case S_cleartext:
 	    case S_des:
 		sprintf(buf, "%s ", sym_buf);
@@ -1143,7 +1152,11 @@ parse_user(void)
 		break;
 
 	    default:
-		parse_error("expecting 'cleartext', or 'des' keyword after "
+		parse_error("expecting 'cleartext', "
+#ifdef HAVE_PAM
+			    "'PAM', "
+#endif
+			    "or 'des' keyword after "
 			    "'pap =' on line %d", sym_line);
 	    }
 	    sym_get();
@@ -1737,9 +1750,11 @@ get_hvalue(HOST *host, int field)
 	    v.pval = host->key;
 	    break;
 
-	/*case S_type:
+	/* XXX
+	case S_type:
 	    v.pval = host->type;
-	    break;*/
+	    break;
+	 */
 
 	case S_prompt:
 	    v.pval = host->prompt;
