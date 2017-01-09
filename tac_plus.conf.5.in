@@ -1,6 +1,6 @@
 .\"
 .hys 50
-.TH tac_plus.conf 5 "21 March 2012"
+.TH tac_plus.conf 5 "6 June 2012"
 .\"
 .SH NAME
 .\"
@@ -437,8 +437,9 @@ those exceptions, enclose the string in double quotes ("this has whitespace").
 .TP
 .B svc_auth
 	XXX:
-		service = ( exec | arap | slip | ppp | shell | tty-daemon |
-				connection | system ) protocol = <proto> {
+		service = ( arap | connection | exec | ppp protocol = <proto> |
+			shell | slip | system | tty-daemon | <client defined> )
+			{
 			[ <default attribute> ]
                         <attr_value_pair>*
                     }
@@ -466,6 +467,7 @@ news, syslog, user, and uucp.
         pap  = cleartext "inbound pap password"
         opap = cleartext "outbound pap password"
         pap  = des <des_string>
+        pap  = file <filename>
         pap  = PAM
         login = <password_spec>
         global = cleartext "outbound pap password"
@@ -518,6 +520,7 @@ chap
 	#endif
                          pap      = cleartext <string> |
                          pap      = des <string> |
+                         pap      = file <filename> |
 	#ifdef PAM
                          pap      = PAM |
 	#endif

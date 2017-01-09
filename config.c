@@ -58,8 +58,9 @@
    <host_decl>		:=	host = <string> {
 					key = <string>
 					prompt = <string>
-					enable = (file|skey|cleartext|des|
-						  nopassword) <filename/string>
+					enable = aceclnt|cleartext|des|
+						 file <filename/string>|
+						 nopassword|skey
 				}
 
    <user_decl>		:=	user = <string> {
@@ -68,12 +69,17 @@
 					<svc>*
 				}
 
-   <password_spec>	:=	file <filename> |
-				skey |
+   <password_spec>	:=	nopassword |
+#ifdef ACECLNT
+				aceclnt|
+#endif
 				cleartext <password> |
 				des <password> |
+				file <filename> |
+#ifdef HAVE_PAM
 				PAM |
-				nopassword
+#endif
+				skey
 
    <user_attr>		:=	name	= <string> |
 				login	= <password_spec> |
@@ -103,8 +109,12 @@
 
    <cmd-match>		:=	<permission> <string>
 
-   <svc_auth>		:=	service = ( exec | arap | slip |
-					    ppp protocol = <string>) {
+   <proto>		:=	XXX define this
+
+   <svc_auth>		:=	service = ( arap | connection | exec |
+					    ppp protocol = <proto> | shell |
+					    slip | system | tty-daemon |
+					    <client defined> ) {
 					[ default attribute = permit ]
 					<attr_value_pair>*
 				}
@@ -1056,7 +1066,6 @@ parse_user(void)
 
 	case S_svc:
 	case S_cmd:
-
 	    if (user->svcs) {
 		/*
 		 * Already parsed some services/commands. Thanks to Gabor Kiss
@@ -1084,6 +1093,12 @@ parse_user(void)
 
 #ifdef SKEY
 	    case S_skey:
+		user->login = tac_strdup(sym_buf);
+		break;
+#endif
+
+#ifdef ACECLNT
+	    case S_aceclnt:
 		user->login = tac_strdup(sym_buf);
 		break;
 #endif
@@ -1117,6 +1132,9 @@ parse_user(void)
 #ifdef SKEY
 			    "'skey', "
 #endif
+#ifdef ACECLNT
+			    "'aceclnt', "
+#endif
 #ifdef HAVE_PAM
 			    "'PAM', "
 #endif
@@ -1143,6 +1161,7 @@ parse_user(void)
 		break;
 #endif
 
+	    case S_file:
 	    case S_cleartext:
 	    case S_des:
 		sprintf(buf, "%s ", sym_buf);
@@ -1196,11 +1215,19 @@ parse_user(void)
 		    user->enable = tac_strdup(sym_buf);
 		    break;
 #endif
+#ifdef ACECLNT
+		case S_aceclnt:
+		    user->enable = tac_strdup(sym_buf);
+		    break;
+#endif
 
 		default:
 		    parse_error("expecting 'file', 'cleartext', 'nopassword', "
 #ifdef SKEY
 				"'skey', "
+#endif
+#ifdef ACECLNT
+				"'aceclnt', "
 #endif
 				"or 'des' keyword after 'enable =' on line %d",
 				sym_line);
@@ -1341,14 +1368,9 @@ parse_svcs(void)
     parse(S_svc);
     parse(S_separator);
     switch (sym_code) {
-    default:
-	parse_error("expecting service type but found %s on line %d",
-		    sym_buf, sym_line);
-	return(NULL);
-
     case S_string:
 	result->type = N_svc;
-	/* should perhaps check that this is an allowable service name */
+	/* XXX should perhaps check that this is an allowable service name */
 	result->value1 = tac_strdup(sym_buf);
 	break;
     case S_exec:
@@ -1365,9 +1387,13 @@ parse_svcs(void)
 	parse(S_ppp);
 	parse(S_protocol);
 	parse(S_separator);
-	/* Should perhaps check that this is a known PPP protocol name */
+	/* XXX Should perhaps check that this is a known PPP protocol name */
 	result->value1 = tac_strdup(sym_buf);
 	break;
+    default:
+	parse_error("expecting service type but found %s on line %d",
+		    sym_buf, sym_line);
+	return(NULL);
     }
     sym_get();
     parse(S_openbra);

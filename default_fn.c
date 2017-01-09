@@ -308,7 +308,7 @@ pap_verify(struct authen_data *data)
 
     name = data->NAS_id->username;
 
-    if (!name[0]) {
+    if (name[0] == '\0') {
 	/* something awful has happened. Give up and die */
 	report(LOG_ERR, "%s %s: no username for inbound PAP login",
 	       session.peer, session.port);

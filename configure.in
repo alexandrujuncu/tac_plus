@@ -335,6 +335,48 @@ AC_SUBST(SKEY)
 AM_CONDITIONAL([TACSKEY], [test "${with_skey}" != "no"])
 
 dnl
+dnl aceclnt - aka RSA SecurID
+dnl
+AC_MSG_CHECKING([whether to include RSA SecurID support])
+AH_TEMPLATE(ACECLNT, [define this to include support for RSA SecurID])
+AC_ARG_WITH(aceclnt,
+	[AS_HELP_STRING([--with-aceclnt[[=PATH]]],[libaceclnt (RSA SecurID) support. PATH is dir above lib, eg: /usr/local])],
+[ case "$withval" in
+  no)
+    AC_MSG_RESULT(no)
+    ;;
+  yes)
+    AC_MSG_RESULT(yes)
+    AC_DEFINE(ACECLNT)
+    AC_SEARCH_LIBS([SD_Init], [aceclnt],
+        [ ],
+        [AC_MSG_ERROR(Could not find libaceclnt.  You must first install aceclnt or provide a hint to the location of library and includes, as in --with-aceclnt=/usr/local)])
+    ;;
+  *)
+    AC_MSG_RESULT(yes)
+    AC_DEFINE(ACECLNT)
+    if test -d "$withval" ; then
+	LDFAGS="$LDFLAGS -L$withval/lib"
+        CFLAGS="$CFLAGS -I$withval/include"
+        AC_SEARCH_LIBS([SD_Init], [aceclnt],
+            [ ],
+            [AC_MSG_ERROR([Could not find libaceclnt.])
+	])
+    else
+        AC_SEARCH_LIBS([SD_Init], [$withval],
+            [ ],
+            [AC_MSG_ERROR([Could not find lib$withval.])
+	])
+    fi
+    ;;
+  esac ],
+  AC_MSG_RESULT(no)
+  with_aceclnt="no"
+)
+AC_SUBST(ACECLNT)
+AM_CONDITIONAL([TACACECLNT], [test "${with_aceclnt}" != "no"])
+
+dnl
 dnl		XXX: might be good to have these as config file options
 dnl		     or just options for running scripts
 dnl userid - aka TACPLUS_USERID

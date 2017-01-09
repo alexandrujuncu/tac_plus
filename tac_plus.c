@@ -769,6 +769,9 @@ void
 vers(void)
 {
     fprintf(stdout, "tac_plus version %s\n", version);
+#if ACECLNT
+    fprintf(stdout, "ACECLNT\n");
+#endif
 #if ACLS
     fprintf(stdout, "ACLS\n");
 #endif

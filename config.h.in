@@ -5,6 +5,9 @@
 #define CONFIG_H        1
 
 
+/* define this to include support for RSA SecurID */
+#undef ACECLNT
+
 /* define this to include ACL support */
 #undef ACLS
 

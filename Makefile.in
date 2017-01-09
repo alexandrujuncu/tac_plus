@@ -40,6 +40,7 @@ build_triplet = @build@
 host_triplet = @host@
 bin_PROGRAMS = tac_pwd$(EXEEXT) tac_plus$(EXEEXT)
 @TACSKEY_TRUE@am__append_1 = skey_fn.c
+@TACACECLNT_TRUE@am__append_2 = aceclnt_fn.c
 subdir = .
 DIST_COMMON = $(am__configure_deps) $(include_HEADERS) \
 	$(noinst_HEADERS) $(srcdir)/Makefile.am $(srcdir)/Makefile.in \
@@ -97,8 +98,9 @@ am__tac_plus_SOURCES_DIST = acct.c authen.c author.c choose_authen.c \
 	config.c default_fn.c default_v0_fn.c do_acct.c do_author.c \
 	dump.c enable.c encrypt.c expire.c hash.c maxsessint.c parse.c \
 	programs.c pw.c pwlib.c report.c sendauth.c sendpass.c \
-	tac_plus.c utils.c skey_fn.c
+	tac_plus.c utils.c skey_fn.c aceclnt_fn.c
 @TACSKEY_TRUE@am__objects_1 = skey_fn.$(OBJEXT)
+@TACACECLNT_TRUE@am__objects_2 = aceclnt_fn.$(OBJEXT)
 am_tac_plus_OBJECTS = acct.$(OBJEXT) authen.$(OBJEXT) author.$(OBJEXT) \
 	choose_authen.$(OBJEXT) config.$(OBJEXT) default_fn.$(OBJEXT) \
 	default_v0_fn.$(OBJEXT) do_acct.$(OBJEXT) do_author.$(OBJEXT) \
@@ -107,7 +109,7 @@ am_tac_plus_OBJECTS = acct.$(OBJEXT) authen.$(OBJEXT) author.$(OBJEXT) \
 	parse.$(OBJEXT) programs.$(OBJEXT) pw.$(OBJEXT) \
 	pwlib.$(OBJEXT) report.$(OBJEXT) sendauth.$(OBJEXT) \
 	sendpass.$(OBJEXT) tac_plus.$(OBJEXT) utils.$(OBJEXT) \
-	$(am__objects_1)
+	$(am__objects_1) $(am__objects_2)
 tac_plus_OBJECTS = $(am_tac_plus_OBJECTS)
 am__DEPENDENCIES_1 =
 tac_plus_DEPENDENCIES = $(am__DEPENDENCIES_1)
@@ -155,6 +157,7 @@ DIST_ARCHIVES = $(distdir).tar.gz
 GZIP_ENV = --best
 distuninstallcheck_listfiles = find . -type f -print
 distcleancheck_listfiles = find . -type f -print
+ACECLNT = @ACECLNT@
 ACLOCAL = @ACLOCAL@
 ACLS = @ACLS@
 AMTAR = @AMTAR@
@@ -314,7 +317,7 @@ tac_plus_SOURCES = acct.c authen.c author.c choose_authen.c config.c \
 	default_fn.c default_v0_fn.c do_acct.c do_author.c dump.c \
 	enable.c encrypt.c expire.c hash.c maxsessint.c parse.c \
 	programs.c pw.c pwlib.c report.c sendauth.c sendpass.c \
-	tac_plus.c utils.c $(am__append_1)
+	tac_plus.c utils.c $(am__append_1) $(am__append_2)
 tac_plus_LDFLAGS = -L$(top_srcdir)
 tac_plus_LDADD = $(WRAPLIBS) -ltacacs
 lib_LTLIBRARIES = libtacacs.la
@@ -561,6 +564,7 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/acct.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/aceclnt_fn.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/authen.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/author.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/choose_authen.Po@am__quote@

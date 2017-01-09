@@ -633,6 +633,9 @@ UENABLE
 ACLS
 TACPLUS_GROUPID
 TACPLUS_USERID
+TACACECLNT_FALSE
+TACACECLNT_TRUE
+ACECLNT
 TACSKEY_FALSE
 TACSKEY_TRUE
 SKEY
@@ -778,6 +781,7 @@ enable_debug
 enable_warn
 with_libwrap
 with_skey
+with_aceclnt
 with_userid
 with_groupid
 enable_acls
@@ -1456,6 +1460,8 @@ Optional Packages:
                           lib, eg: /usr/local. (default)
   --with-skey[=PATH]      libskey (skey) support.  PATH is dir above lib,
                           eg: /usr/local
+  --with-aceclnt[=PATH]   libaceclnt (RSA SecurID) support. PATH is dir above
+                          lib, eg: /usr/local
   --with-userid=UID       tacacs will setuid(UID) after it binds the tcp port
   --with-groupid=UID      tacacs will setgid(GID) after it binds the tcp port
   --with-pidfile=PATH     alternate pidfile FQPN
@@ -14006,6 +14012,228 @@ else
 fi
 
 
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to include RSA SecurID support" >&5
+$as_echo_n "checking whether to include RSA SecurID support... " >&6; }
+
+
+# Check whether --with-aceclnt was given.
+if test "${with_aceclnt+set}" = set; then :
+  withval=$with_aceclnt;  case "$withval" in
+  no)
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+    ;;
+  yes)
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+    $as_echo "#define ACECLNT 1" >>confdefs.h
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing SD_Init" >&5
+$as_echo_n "checking for library containing SD_Init... " >&6; }
+if ${ac_cv_search_SD_Init+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_func_search_save_LIBS=$LIBS
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char SD_Init ();
+int
+main ()
+{
+return SD_Init ();
+  ;
+  return 0;
+}
+_ACEOF
+for ac_lib in '' aceclnt; do
+  if test -z "$ac_lib"; then
+    ac_res="none required"
+  else
+    ac_res=-l$ac_lib
+    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
+  fi
+  if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_search_SD_Init=$ac_res
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext
+  if ${ac_cv_search_SD_Init+:} false; then :
+  break
+fi
+done
+if ${ac_cv_search_SD_Init+:} false; then :
+
+else
+  ac_cv_search_SD_Init=no
+fi
+rm conftest.$ac_ext
+LIBS=$ac_func_search_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_SD_Init" >&5
+$as_echo "$ac_cv_search_SD_Init" >&6; }
+ac_res=$ac_cv_search_SD_Init
+if test "$ac_res" != no; then :
+  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
+
+else
+  as_fn_error as in --with-aceclnt=/usr/local "Could not find libaceclnt.  You must first install aceclnt or provide a hint to the location of library and includes" "$LINENO" 5
+fi
+
+    ;;
+  *)
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+    $as_echo "#define ACECLNT 1" >>confdefs.h
+
+    if test -d "$withval" ; then
+	LDFAGS="$LDFLAGS -L$withval/lib"
+        CFLAGS="$CFLAGS -I$withval/include"
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing SD_Init" >&5
+$as_echo_n "checking for library containing SD_Init... " >&6; }
+if ${ac_cv_search_SD_Init+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_func_search_save_LIBS=$LIBS
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char SD_Init ();
+int
+main ()
+{
+return SD_Init ();
+  ;
+  return 0;
+}
+_ACEOF
+for ac_lib in '' aceclnt; do
+  if test -z "$ac_lib"; then
+    ac_res="none required"
+  else
+    ac_res=-l$ac_lib
+    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
+  fi
+  if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_search_SD_Init=$ac_res
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext
+  if ${ac_cv_search_SD_Init+:} false; then :
+  break
+fi
+done
+if ${ac_cv_search_SD_Init+:} false; then :
+
+else
+  ac_cv_search_SD_Init=no
+fi
+rm conftest.$ac_ext
+LIBS=$ac_func_search_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_SD_Init" >&5
+$as_echo "$ac_cv_search_SD_Init" >&6; }
+ac_res=$ac_cv_search_SD_Init
+if test "$ac_res" != no; then :
+  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
+
+else
+  as_fn_error $? "Could not find libaceclnt." "$LINENO" 5
+
+fi
+
+    else
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing SD_Init" >&5
+$as_echo_n "checking for library containing SD_Init... " >&6; }
+if ${ac_cv_search_SD_Init+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_func_search_save_LIBS=$LIBS
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char SD_Init ();
+int
+main ()
+{
+return SD_Init ();
+  ;
+  return 0;
+}
+_ACEOF
+for ac_lib in '' $withval; do
+  if test -z "$ac_lib"; then
+    ac_res="none required"
+  else
+    ac_res=-l$ac_lib
+    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
+  fi
+  if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_search_SD_Init=$ac_res
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext
+  if ${ac_cv_search_SD_Init+:} false; then :
+  break
+fi
+done
+if ${ac_cv_search_SD_Init+:} false; then :
+
+else
+  ac_cv_search_SD_Init=no
+fi
+rm conftest.$ac_ext
+LIBS=$ac_func_search_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_SD_Init" >&5
+$as_echo "$ac_cv_search_SD_Init" >&6; }
+ac_res=$ac_cv_search_SD_Init
+if test "$ac_res" != no; then :
+  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
+
+else
+  as_fn_error $? "Could not find lib$withval." "$LINENO" 5
+
+fi
+
+    fi
+    ;;
+  esac
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+  with_aceclnt="no"
+
+fi
+
+
+ if test "${with_aceclnt}" != "no"; then
+  TACACECLNT_TRUE=
+  TACACECLNT_FALSE='#'
+else
+  TACACECLNT_TRUE='#'
+  TACACECLNT_FALSE=
+fi
+
+
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to setuid()" >&5
 $as_echo_n "checking whether to setuid()... " >&6; }
 
@@ -15319,6 +15547,10 @@ fi
 
 if test -z "${TACSKEY_TRUE}" && test -z "${TACSKEY_FALSE}"; then
   as_fn_error $? "conditional \"TACSKEY\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${TACACECLNT_TRUE}" && test -z "${TACACECLNT_FALSE}"; then
+  as_fn_error $? "conditional \"TACACECLNT\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 

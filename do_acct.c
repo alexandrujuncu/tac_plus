@@ -73,7 +73,7 @@ do_acct_file(struct acct_rec *rec)
     char ct[LINE_MAX];
     struct tm *tm;
 
-    tm = gmtime(&t);
+    tm = localtime(&t);
     strftime(ct, LINE_MAX, "%h %e %T", tm);
 
     if (!acctfd) {

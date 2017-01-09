@@ -446,3 +446,9 @@ F4.0.4.25
 	- sprintf -> snprintf - Robert Swiecki
 	- more pkt size checking in acct.c, authen.c, author.c - Robert Swiecki
 	- free(pak) in start_session() not in account(), for consistency
+
+F4.0.4.26
+	- add optional securid support via aceclient library - Matt Addison
+	- use localtime instead of gmtime for log messages so that the timezone
+	  is inheritted.
+	- allow file authentication for PAP authorization

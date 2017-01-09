@@ -131,7 +131,7 @@ verify(char *name, char *passwd, struct authen_data *data, int recurse)
      * If there is no login or pap password for this user, see if there is
      * a global password that can be used.
      */
-    if (!cfg_passwd) {
+    if (cfg_passwd == NULL) {
 	cfg_passwd = cfg_get_global_secret(name, recurse);
     }
 
@@ -140,7 +140,7 @@ verify(char *name, char *passwd, struct authen_data *data, int recurse)
      * matter) but the default authentication = file <file> statement
      * has been issued, attempt to use this password file
      */
-    if (!cfg_passwd) {
+    if (cfg_passwd == NULL) {
 	char *file = cfg_get_authen_default();
 	if (file) {
 	    return(passwd_file_verify(name, passwd, data, file));
@@ -168,7 +168,7 @@ verify(char *name, char *passwd, struct authen_data *data, int recurse)
 #endif
 
     p = tac_find_substring("cleartext ", cfg_passwd);
-    if (p) {
+    if (p != NULL) {
 	if (debug & DEBUG_PASSWD_FLAG)
 	    report(LOG_DEBUG, "verify daemon %s == NAS %s", p, passwd);
 
@@ -209,7 +209,8 @@ verify(char *name, char *passwd, struct authen_data *data, int recurse)
 	return(passwd_file_verify(name, passwd, data, p));
     }
 
-    /* Oops. No idea what kind of password this is. This should never
+    /*
+     * Oops. No idea what kind of password this is. This should never
      * happen as the parser should never create such passwords.
      */
     report(LOG_ERR, "%s: Error cannot identify password type %s for %s",

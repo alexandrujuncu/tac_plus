@@ -99,7 +99,7 @@ skey_fn(struct authen_data *data)
 
     /* Unless we're enabling, we need a username */
     if (data->service != TAC_PLUS_AUTHEN_SVC_ENABLE &&
-	!(char) data->NAS_id->username[0]) {
+	(char)data->NAS_id->username[0] == '\0') {
 	switch (p->state) {
 
 	case STATE_AUTHEN_GETUSER:

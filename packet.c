@@ -138,7 +138,7 @@ read_packet(void)
     session.last_exch = time(NULL);
 
     if (session.seq_no != hdr.seq_no) {
-	report(LOG_ERR, "%s: Illegal session seq # %d != packet seq # %d",
+	report(LOG_ERR, "%s: Illegal session seq #, expecting %d, received %d",
 	       session.peer, session.seq_no, hdr.seq_no);
 	free(pkt);
 	return(NULL);
