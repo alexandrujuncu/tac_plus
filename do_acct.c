@@ -214,7 +214,7 @@ wtmp_entry(char *line, char *name, char *host, time_t utime)
     if (!wtmpfile) {
 	return(1);
     }
-#if HAVE_UTMPX_H
+#if HAVE_UTMPX_H  && !HAVE_UTMP_H
 # define ut_name	ut_user
 #endif
 

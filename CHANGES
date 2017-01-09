@@ -423,3 +423,6 @@ F4.0.4.21
 
 F4.0.4.22
 	- check of regexec() return value inverted - from Ignas Kazlauskas
+
+F4.0.4.23
+	- fix build on netbsd
