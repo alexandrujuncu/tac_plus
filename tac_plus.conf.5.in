@@ -1,6 +1,6 @@
 .\"
 .hys 50
-.TH tac_plus.conf 5 "6 June 2012"
+.TH tac_plus.conf 5 "1 August 2013"
 .\"
 .SH NAME
 .\"
@@ -121,7 +121,7 @@ group (which may be a member of yet another group, and so on).
 .TP
 .B host
 The host clause allows the configuration values noted below to be set
-for the client name by IP address.  If
+for the client named by IP address.  If
 .B tac_plus
 is started with the
 .B \-L
@@ -392,7 +392,7 @@ with skey (--enable-skey) support.
 PAM (Pluggable Authentication Modules framework) is an authentication
 mechanism (and much more) capable of various types of authentication
 methods that are chosen by a configuration file.
-The PAM service name is "tac_plus".
+The PAM service name is the name of tac_plus executable, normally "tac_plus".
 PAM can be used only for login authentication, it is not implemented for
 enable authorization, and does not support OTP-like challenge system (ie:
 no additional prompting).

@@ -1,4 +1,4 @@
->Changes from Release 0.0 to release 0.1
+Changes from Release 0.0 to release 0.1
 ---------------------------------------
 
 You must now say "default attribute = permit" instead of
@@ -452,3 +452,10 @@ F4.0.4.26
 	- use localtime instead of gmtime for log messages so that the timezone
 	  is inheritted.
 	- allow file authentication for PAP authorization
+
+F4.0.4.27a
+	- add "port" to clarify log messages of default_fn.c
+	- use program name (filename) instead of hard-coded "tac_plus" for
+	  name given to PAM
+	- change socket binding to allow an IPv6 address with the -B argument
+	- bind v4 and v6 sockets if system claims its has addresses for the AFs

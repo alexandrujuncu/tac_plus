@@ -26,6 +26,7 @@
 
 #ifndef TAC_PLUS_PORT
 #define	TAC_PLUS_PORT			49
+#define	TAC_PLUS_PORTSTR		"49"
 #endif
 
 #define TAC_PLUS_READ_TIMEOUT		180	/* seconds */

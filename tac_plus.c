@@ -42,9 +42,11 @@ volatile sig_atomic_t reinitialize;	/* schedule config reinitialization */
 int sendauth_only;		/* don't respond to sendpass requests */
 int debug;			/* debugging flags */
 int facility = LOG_DAEMON;	/* syslog facility */
-int port;			/* port we're listening on */
+int port = TAC_PLUS_PORT;	/* port we're listening on */
+char *portstr = TAC_PLUS_PORTSTR;
 int console;			/* write all syslog messages to console */
 int parse_only;			/* exit after verbose parsing */
+int lookup_peer;		/* look-up peer names from addresses */
 #if HAVE_PID_T
 pid_t childpid;			/* child pid, global for unlink(PIDFILE) */
 #else
@@ -65,6 +67,7 @@ struct session session;     /* session data */
 static char pidfilebuf[PIDSZ]; /* holds current name of the pidfile */
 
 static RETSIGTYPE die(int);
+static int get_socket(int **, int *);
 static int init(void);
 #if defined(REAPCHILD) && defined(REAPSIGIGN)
 static RETSIGTYPE reapchild(int);
@@ -154,69 +157,101 @@ reapchild(int notused)
  * Return a socket bound to an appropriate port number/address. Exits
  * the program on failure.
  */
-int
-get_socket(void)
+static int
+get_socket(int **sa, int *nsa)
 {
-    int s;
-    struct sockaddr_in sin;
-    struct servent *sp;
-    u_long inaddr;
-    int on = 1,
-	kalive = 1;
+    char	host[NI_MAXHOST], serv[NI_MAXHOST];
+    struct addrinfo hint, *res, *rp;
+    u_long	inaddr;
+    int		ecode,
+		flag,
+		kalive = 1,
+		s;
 
-    memset((char *)&sin, 0, sizeof(sin));
-
-    if (port) {
-	sin.sin_port = htons(port);
-    } else {
-	sp = getservbyname("tacacs", "tcp");
-	if (sp)
-	    sin.sin_port = sp->s_port;
-	else {
-	    report(LOG_ERR, "Cannot find socket port");
-	    tac_exit(1);
-	}
-    }
-
-    sin.sin_family = AF_INET;
-    if (! bind_address) {
-	sin.sin_addr.s_addr = htonl(INADDR_ANY);
-    } else {
-	if ((inaddr = inet_addr(bind_address)) != -1) {
-	    /* A dotted decimal address */
-	    memcpy(&sin.sin_addr, &inaddr, sizeof(inaddr));
-	    sin.sin_family = AF_INET;
-	} else {
-	    report(LOG_ERR, "Invalid bind address specification: '%s'",
-		bind_address);
-	    tac_exit(1);
-	}
-    }
-
-    s = socket(AF_INET, SOCK_STREAM, 0);
-
-    if (s < 0) {
-	console++;
-	report(LOG_ERR, "get_socket: socket: %s", strerror(errno));
-	tac_exit(1);
-    }
-#ifdef SO_REUSEADDR
-    if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR, (char *)&on, sizeof(on)) < 0)
-	perror("setsockopt - SO_REUSEADDR");
+    memset(&hint, 0, sizeof(struct addrinfo));
+    hint.ai_family = AF_UNSPEC;
+    hint.ai_socktype = SOCK_STREAM;
+    hint.ai_protocol = IPPROTO_TCP;
+    hint.ai_flags = AI_PASSIVE;
+#ifdef AI_ADDRCONFIG
+    hint.ai_flags |= AI_ADDRCONFIG;
 #endif
-
-    if (setsockopt(s, SOL_SOCKET, SO_KEEPALIVE, (void *)&kalive,
-		   sizeof(kalive)) < 0)
-	    perror("setsockopt - SO_KEEPALIVE");
-    on = 0;
-    (void)setsockopt(s, IPPROTO_TCP, TCP_NODELAY, (char *)&on, sizeof(on));
-    if (bind(s, (struct sockaddr *)&sin, sizeof(sin)) < 0) {
-	console++;
-	report(LOG_ERR, "get_socket: bind %d %s", ntohs(sin.sin_port),
-	       strerror(errno));
+    if (bind_address)
+	ecode = getaddrinfo(bind_address, portstr, &hint, &res);
+    else
+	ecode = getaddrinfo(NULL, portstr, &hint, &res);
+    if (ecode != 0) {
+	report(LOG_ERR, "getaddrinfo: %s\n", gai_strerror(ecode));
 	tac_exit(1);
     }
-    return(s);
+
+    *sa = NULL;
+    *nsa = 0;
+    for (rp = res; rp != NULL; rp = rp->ai_next) {
+	s = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
+	if (s == -1)
+	    continue;
+
+	if (1 || debug & DEBUG_PACKET_FLAG)
+	    report(LOG_DEBUG, "socket FD %d AF %d", s, rp->ai_family);
+	flag = 1;
+#ifdef IPV6_V6ONLY
+	if (rp->ai_family == AF_INET6)
+	    setsockopt(s, IPPROTO_IPV6, IPV6_V6ONLY, &flag, sizeof(flag));
+#endif
+#ifdef SO_REUSEADDR
+	if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR, (char *)&flag,
+		       sizeof(flag)) < 0)
+	    perror("setsockopt - SO_REUSEADDR");
+#endif
+	if (setsockopt(s, SOL_SOCKET, SO_KEEPALIVE, (void *)&kalive,
+		       sizeof(kalive)) < 0)
+	    perror("setsockopt - SO_KEEPALIVE");
+	flag = 0;
+	if (setsockopt(s, IPPROTO_TCP, TCP_NODELAY, (char *)&flag,
+		       sizeof(flag)) < 0)
+	    perror("setsockopt - SO_NODELAY");
+
+	if (bind(s, rp->ai_addr, rp->ai_addrlen) < 0) {
+	    console = 1;
+	    ecode = errno;
+	    if (lookup_peer)
+		flag = 0;
+	    else
+		flag = NI_NUMERICHOST | NI_NUMERICSERV;
+	    if (getnameinfo(rp->ai_addr, rp->ai_addrlen, host, NI_MAXHOST,
+			    serv, NI_MAXHOST, flag)) {
+		strncpy(host, "unknown", NI_MAXHOST - 1);
+		host[NI_MAXHOST - 1] = '\0';
+		strncpy(serv, "unknown", NI_MAXHOST - 1);
+		serv[NI_MAXHOST - 1] = '\0';
+	    }
+	    report(LOG_ERR, "get_socket: bind %s:%s %s", host, serv,
+		   strerror(ecode));
+	    console = 0;
+	    close(s);
+	    s = -1;
+	    continue;
+	}
+	if (*sa == NULL)
+	    *sa = malloc(sizeof(int) * ++(*nsa));
+	else
+	    *sa = realloc(*sa, sizeof(int) * ++(*nsa));
+	if (*sa == NULL) {
+	    report(LOG_ERR, "malloc failure: %s", strerror(errno));
+	    tac_exit(1);
+	}
+	(*sa)[*nsa - 1] = s;
+    }
+    freeaddrinfo(res);
+
+    if (*nsa < 1) {
+	console = 1;
+	report(LOG_ERR, "get_socket: could not bind a listening socket");
+	tac_exit(1);
+    }
+
+    return(0);
 }
 
 void
@@ -234,10 +269,9 @@ int
 main(int argc, char **argv)
 {
     extern char *optarg;
-    int c;
-    int s;
     FILE *fp;
-    int lookup_peer = 0;
+    int	c, *s, ns;
+    struct pollfd *pfds;
 
 #if PROFILE
     moncontrol(0);
@@ -254,10 +288,6 @@ main(int argc, char **argv)
 
     open_logfile();
 
-#ifdef TAC_PLUS_PORT
-    port = TAC_PLUS_PORT;
-#endif
-
     if (argc <= 1) {
 	usage();
 	tac_exit(1);
@@ -269,28 +299,29 @@ main(int argc, char **argv)
 	    bind_address = optarg;
 	    break;
 	case 'L':		/* lookup peer names via DNS */
-	    lookup_peer++;
+	    lookup_peer = 1;
 	    break;
 	case 's':		/* don't respond to sendpass */
-	    sendauth_only++;
+	    sendauth_only = 1;
 	    break;
 	case 'v':		/* print version and exit */
 	    vers();
 	    tac_exit(1);
 	case 't':
-	    console++;		/* log to console too */
+	    console = 1;	/* log to console too */
 	    break;
 	case 'P':		/* Parse config file only */
-	    parse_only++;
+	    parse_only = 1;
 	    break;
 	case 'G':		/* foreground */
-	    opt_G++;
+	    opt_G = 1;
 	    break;
 	case 'g':		/* single threaded */
-	    single++;
+	    single = 1;
 	    break;
 	case 'p':		/* port */
 	    port = atoi(optarg);
+	    portstr = optarg;
 	    break;
 	case 'd':		/* debug */
 	    debug |= atoi(optarg);
@@ -343,11 +374,10 @@ main(int argc, char **argv)
 
     if (!standalone) {
 	/* running under inetd */
+	char host[NI_MAXHOST];
+	int on;
 	struct sockaddr_in name;
 	socklen_t name_len;
-#ifdef FIONBIO
-	int on = 1;
-#endif
 
 	name_len = sizeof(name);
 	session.flags |= SESS_NO_SINGLECONN;
@@ -356,25 +386,29 @@ main(int argc, char **argv)
 	if (getpeername(session.sock, (struct sockaddr *)&name, &name_len)) {
 	    report(LOG_ERR, "getpeername failure %s", strerror(errno));
 	} else {
-	    struct hostent *hp = NULL;
-
-	    if (lookup_peer) {
-		hp = gethostbyaddr((char *)&name.sin_addr.s_addr,
-				   sizeof(name.sin_addr.s_addr), AF_INET);
+	    if (lookup_peer)
+		on = 0;
+	    else
+		on = NI_NUMERICHOST;
+	    if (getnameinfo((struct sockaddr *)&name, name_len, host, 128,
+			    NULL, 0, on)) {
+		strncpy(host, "unknown", NI_MAXHOST - 1);
+		host[NI_MAXHOST - 1] = '\0';
 	    }
 	    if (session.peer) {
 		free(session.peer);
 	    }
-	    session.peer = tac_strdup(hp ? hp->h_name :
-				      (char *)inet_ntoa(name.sin_addr));
+	    session.peer = tac_strdup(host);
 
 	    if (session.peerip)
 		free(session.peerip);
-	    session.peerip = tac_strdup((char *)inet_ntoa(name.sin_addr));
+	    session.peerip = tac_strdup((char *)inet_ntop(name.sin_family,
+					&name.sin_addr, host, name_len));
 	    if (debug & DEBUG_AUTHEN_FLAG)
 		report(LOG_INFO, "session.peerip is %s", session.peerip);
 	}
 #ifdef FIONBIO
+	on = 1;
 	if (ioctl(session.sock, FIONBIO, &on) < 0) {
 	    report(LOG_ERR, "ioctl(FIONBIO) %s", strerror(errno));
 	    tac_exit(1);
@@ -465,16 +499,18 @@ main(int argc, char **argv)
     umask(022);
     errno = 0;
 
-    s = get_socket();
+    get_socket(&s, &ns);
 
 #ifndef SOMAXCONN
 #define SOMAXCONN 5
 #endif
 
-    if (listen(s, SOMAXCONN) < 0) {
-	console++;
-	report(LOG_ERR, "listen: %s", strerror(errno));
-	tac_exit(1);
+    for (c = 0; c < ns; c++) {
+	if (listen(s[c], SOMAXCONN) < 0) {
+	    console = 1;
+	    report(LOG_ERR, "listen: %s", strerror(errno));
+	    tac_exit(1);
+	}
     }
 
     if (port == TAC_PLUS_PORT) {
@@ -533,24 +569,32 @@ main(int argc, char **argv)
     report(LOG_DEBUG, "uid=%d euid=%d gid=%d egid=%d s=%d",
 	   getuid(), geteuid(), getgid(), getegid(), s);
 
+    pfds = malloc(sizeof(struct pollfd) * ns);
+    if (pfds == NULL) {
+	report(LOG_ERR, "malloc failure: %s", strerror(errno));
+	tac_exit(1);
+    }
+    for (c = 0; c < ns; c++) {
+	pfds[c].fd = s[c];
+	pfds[c].events = POLLIN | POLLERR | POLLHUP | POLLNVAL;
+    }
+
     for (;;) {
 #if HAVE_PID_T
 	pid_t pid;
 #else
 	int pid;
 #endif
+	char host[NI_MAXHOST];
 	struct sockaddr_in from;
 	socklen_t from_len;
-	struct pollfd pfds;
 	int newsockfd, status;
-	struct hostent *hp = NULL;
+	int flags;
 
 	if (reinitialize)
 	    init();
 
-	pfds.fd = s;
-	pfds.events = POLLIN | POLLERR | POLLHUP | POLLNVAL;
-	status = poll(&pfds, 1, TAC_PLUS_ACCEPT_TIMEOUT * 1000);
+	status = poll(pfds, ns, TAC_PLUS_ACCEPT_TIMEOUT * 1000);
 	if (status == 0)
 	    continue;
 	if (status == -1)
@@ -559,7 +603,14 @@ main(int argc, char **argv)
 
 	memset((char *)&from, 0, sizeof(from));
 	from_len = sizeof(from);
-	newsockfd = accept(s, (struct sockaddr *)&from, &from_len);
+	for (c = 0; c < ns; c++) {
+	    if (pfds[c].revents & POLLIN)
+		newsockfd = accept(s[c], (struct sockaddr *)&from, &from_len);
+	    else if (pfds[c].revents & (POLLERR | POLLHUP | POLLNVAL)) {
+		report(LOG_ERR, "exception on listen FD %d", s[c]);
+		tac_exit(1);
+	    }
+	}
 
 	if (newsockfd < 0) {
 	    if (errno == EINTR)
@@ -569,23 +620,25 @@ main(int argc, char **argv)
 	    continue;
 	}
 
-	if (lookup_peer) {
-	    hp = gethostbyaddr((char *)&from.sin_addr.s_addr,
-			       sizeof(from.sin_addr.s_addr), AF_INET);
+	if (lookup_peer)
+	    flags = 0;
+	else
+	    flags = NI_NUMERICHOST;
+	if (getnameinfo((struct sockaddr *)&from, from_len, host, 128, NULL, 0,
+			flags)) {
+	    strncpy(host, "unknown", NI_MAXHOST - 1);
+	    host[NI_MAXHOST - 1] = '\0';
 	}
 
 	if (session.peer) {
 	    free(session.peer);
 	}
-	session.peer = tac_strdup(hp ? hp->h_name :
-				  (char *)inet_ntoa(from.sin_addr));
+	session.peer = tac_strdup(host);
 
 	if (session.peerip)
 	    free(session.peerip);
-	session.peerip = tac_strdup((char *)inet_ntoa(from.sin_addr));
-	if (debug & DEBUG_AUTHEN_FLAG)
-	    report(LOG_INFO, "session.peerip is %s", session.peerip);
-
+	session.peerip = tac_strdup((char *)inet_ntop(from.sin_family,
+				    &from.sin_addr, host, from_len));
 	if (debug & DEBUG_PACKET_FLAG)
 	    report(LOG_DEBUG, "session request from %s sock=%d",
 		   session.peer, newsockfd);
@@ -604,7 +657,8 @@ main(int argc, char **argv)
 	if (pid == 0) {
 	    /* child */
 	    if (!single)
-		close(s);
+		for (c = 0; c < ns; c++)
+		    close(s[c]);
 	    session.sock = newsockfd;
 #ifdef LIBWRAP
 	    if (! hosts_ctl(progname,session.peer,session.peerip,progname)) {

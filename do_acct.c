@@ -158,16 +158,16 @@ do_acct_syslog(struct acct_rec *rec)
 
     switch(rec->acct_type) {
 	case ACCT_TYPE_UPDATE:
-	    acct_type = "update"; 
+	    acct_type = "update";
 	    break;
 	case ACCT_TYPE_START:
-	    acct_type = "start"; 
+	    acct_type = "start";
 	    break;
 	case ACCT_TYPE_STOP:
-	    acct_type = "stop"; 
+	    acct_type = "stop";
 	    break;
 	default:
-	    acct_type = "default"; 
+	    acct_type = "default";
     }
 
     for (i = 0; i < rec->num_args; i++) {
@@ -186,14 +186,14 @@ do_acct_syslog(struct acct_rec *rec)
 	}
     }
 
-    syslog(LOG_INFO, "%s    %s    %s    %s    %s    %s", 
-	   ((rec->identity->NAS_name) && rec->identity->NAS_name[0]) ? 
+    syslog(LOG_INFO, "%s    %s    %s    %s    %s    %s",
+	   ((rec->identity->NAS_name) && rec->identity->NAS_name[0]) ?
 	    rec->identity->NAS_name : "unknown",
-	   ((rec->identity->username) && rec->identity->username[0]) ? 
+	   ((rec->identity->username) && rec->identity->username[0]) ?
 	    rec->identity->username : "unknown",
-	   ((rec->identity->NAS_port) && rec->identity->NAS_port[0]) ? 
+	   ((rec->identity->NAS_port) && rec->identity->NAS_port[0]) ?
 	    rec->identity->NAS_port : "unknown",
-	   ((rec->identity->NAC_address) && rec->identity->NAC_address[0]) ? 
+	   ((rec->identity->NAC_address) && rec->identity->NAC_address[0]) ?
 	    rec->identity->NAC_address : "unknown",
 	   acct_type, cmdbuf);
 

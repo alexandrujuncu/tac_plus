@@ -97,8 +97,8 @@ default_fn(struct authen_data *data)
 	data->status = TAC_PLUS_AUTHEN_STATUS_FAIL;
 	if (debug) {
 	    report(LOG_DEBUG,
-		   "authentication query for '%s' %s from %s rejected",
-		   name && name[0] ? name : "unknown",
+		   "authentication query for '%s' port %s from %s rejected",
+		   (name != NULL && name[0] != '\0') ? name : "unknown",
 		   session.port, session.peer);
 	}
 	return(0);
@@ -112,8 +112,9 @@ default_fn(struct authen_data *data)
 	    chap_verify(data);
 
 	    if (debug) {
-		report(LOG_DEBUG, "chap-login query for '%s' %s from %s %s",
-		       name && name[0] ? name : "unknown",
+		report(LOG_DEBUG,
+		       "chap-login query for '%s' port %s from %s %s",
+		       (name != NULL && name[0] != '\0') ? name : "unknown",
 		       session.port, session.peer,
 		       (data->status == TAC_PLUS_AUTHEN_STATUS_PASS) ?
 		       "accepted" : "rejected");
@@ -126,8 +127,9 @@ default_fn(struct authen_data *data)
 	    mschap_verify(data);
 
 	    if (debug) {
-		report(LOG_DEBUG, "mschap-login query for '%s' %s from %s %s",
-		       name && name[0] ? name : "unknown",
+		report(LOG_DEBUG,
+		       "mschap-login query for '%s' port %s from %s %s",
+		       (name != NULL && name[0] != '\0') ? name : "unknown",
 		       session.port, session.peer,
 		       (data->status == TAC_PLUS_AUTHEN_STATUS_PASS) ?
 		       "accepted" : "rejected");
@@ -140,8 +142,8 @@ default_fn(struct authen_data *data)
 	    arap_verify(data);
 
 	    if (debug) {
-		report(LOG_DEBUG, "arap query for '%s' %s from %s %s",
-		       name && name[0] ? name : "unknown",
+		report(LOG_DEBUG, "arap query for '%s' port %s from %s %s",
+		       (name != NULL && name[0] != '\0') ? name : "unknown",
 		       session.port, session.peer,
 		       (data->status == TAC_PLUS_AUTHEN_STATUS_PASS) ?
 		       "accepted" : "rejected");
@@ -152,8 +154,8 @@ default_fn(struct authen_data *data)
 	    pap_verify(data);
 
 	    if (debug) {
-		report(LOG_INFO, "pap-login query for '%s' %s from %s %s",
-		       name && name[0] ? name : "unknown",
+		report(LOG_DEBUG, "pap-login query for '%s' port %s from %s %s",
+		       (name != NULL && name[0] != '\0') ? name : "unknown",
 		       session.port,
 		       session.peer,
 		       (data->status == TAC_PLUS_AUTHEN_STATUS_PASS) ?
@@ -173,8 +175,8 @@ default_fn(struct authen_data *data)
 	    default:
 		/* Authentication finished */
 		if (debug)
-		    report(LOG_INFO, "login query for '%s' %s from %s %s",
-			   name && name[0] ? name : "unknown",
+		    report(LOG_DEBUG, "login query for '%s' port %s from %s %s",
+			   (name != NULL && name[0] != '\0') ? name : "unknown",
 			   session.port,
 			   session.peer,
 			   (data->status == TAC_PLUS_AUTHEN_STATUS_PASS) ?

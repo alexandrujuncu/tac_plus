@@ -54,6 +54,8 @@ static int pam_verify(char *, char *);
 #endif
 static int passwd_file_verify(char *, char *, struct authen_data *, char *);
 
+extern char *progname;
+
 /* Adjust data->status depending on whether a user has expired or not */
 void
 set_expiration_status(char *exp_date, struct authen_data *data)
@@ -610,7 +612,7 @@ pam_verify(char *user, char *passwd)
 	return(0);
     }
 
-    if ((err = pam_start("tac_plus", user, &conv, &pamh)) != PAM_SUCCESS) {
+    if ((err = pam_start(progname, user, &conv, &pamh)) != PAM_SUCCESS) {
 	report(LOG_ERR, "pam_start failed: %s", pam_strerror(pamh, err));
 	pam_end(pamh, err);
 	if (debug & DEBUG_PASSWD_FLAG)
